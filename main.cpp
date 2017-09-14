@@ -6,11 +6,10 @@
 #include <ctime>
 #include <cassert>
 
-#define QUEENS 40
-#define DEPTH 2048
-#define ITERATIONS 700
-#define MATE_PCT 0.4
-#define TOP_PCT 0.1
+#define QUEENS 20       // Number of Queens on the board.
+#define DEPTH 2048      // Amount of chromosomes in a single gene.
+#define ITERATIONS 700  // Number of tries to find a solution.
+#define ELITE 0.1     // The elite precentage of the chromosomes to be moved to the next generation.
 
 using namespace std;
 template <class T>
@@ -19,10 +18,17 @@ void GA_swap(T& a, T& b){
     a = b;
     b = c;
 }
+/*
+    A solution holds a vector of places for the N-Queens. It is a chromosome in a gene, each with
+    it's appropriate fitness.
+*/
 class Solution{
     vector<int> places;
     int fitness;
 public:
+    /*
+        The constructor randomly selects places the queens and then calculates the solutions's fitness.
+    */
     Solution(){
         int queens[QUEENS] = {0};
         for(int i=0;i<QUEENS;++i){
@@ -66,6 +72,12 @@ public:
     unsigned int size(){
         return places.size();
     }
+    /*
+        Mates 2 chromosomes and return a child. The mating algorithm chooses a number of locaindexes from the
+        first parent, copies them and the appropriate queens to the same indexes of the child and then
+        takes the rest of the queens from the other parent and put them in the free indexes of the child
+        while keeping their relative order.
+    */
     Solution* mate(Solution s){
         Solution* res = new Solution;
         int rand_hist[QUEENS] = {0};
@@ -76,10 +88,6 @@ public:
         int hist[QUEENS] = {0};
         int hist_index[QUEENS] = {0};
         int to_keep = rand()%(QUEENS-1);
-        /*
-        int to_keep = rand() % QUEENS;
-        to_keep = (to_keep < QUEENS/2) ? QUEENS/2 : to_keep;
-        */
         for(int i=0; i<to_keep && len_rand>=1; ++i){
             int i_hist = rand() % len_rand;
             int index = rand_hist[i_hist];
@@ -128,14 +136,16 @@ public:
     }
     Board& operator=(const Board& b){
         for(int i=0;i<DEPTH;++i){
-            //delete solutions[i];
             solutions[i] = b.solutions[i];
         }
         return *this;
     }
+    /*
+        The sort function sorts only the Elite chromosomes.
+    */
     void sort(){
         int min, i_min;
-        for(int i=0; i<DEPTH*TOP_PCT; ++i){
+        for(int i=0; i<DEPTH*ELITE; ++i){
             min = (*(solutions[i])).get_fitness();
             i_min = i;
             for(int j=i+1; j<DEPTH; ++j){
@@ -150,6 +160,9 @@ public:
             solutions[i_min] = temp;
         }
     }
+    /*
+        Finds the strongest chromosome in the gene (with minimum fitness).
+    */
     int best(){
         int min = (*(solutions[0])).get_fitness(), i_min = 0;
         for(int i=1; i<DEPTH; ++i){
@@ -161,19 +174,23 @@ public:
         }
         return i_min;
     }
+    /*
+        Copies the elite chromosomes to the buffer.
+    */
     void elite(Board& buffer){
         Board temp = *this;
         temp.sort();
-        for(int i=0; i<DEPTH*TOP_PCT; ++i){
+        for(int i=0; i<DEPTH*ELITE; ++i){
             buffer.solutions[i] = temp.solutions[i];
         }
     }
+    /*
+        Mating has 2 steps:
+            1. Go through the entire gene and select 2 chromosomes to mate in each iteration, using
+            Roulette Selection.
+            2. Mate the selected 2 chromosomes and add the child to the buffer.
+    */
     void mate(Board& buffer){
-        /*
-        for(int i=0;i<DEPTH*TOP_PCT;++i){
-            buffer.solutions[i] = solutions[i];
-        }
-        */
         elite(buffer);
         double weight_sum = 0;
         for(int i=0; i<DEPTH; ++i){
@@ -181,15 +198,19 @@ public:
             if(!fitness) cout << "FOUND!!";
             weight_sum += 1/(double)fitness;
         }
-        for(int i=DEPTH*TOP_PCT;i<DEPTH;i++){
+        for(int i=DEPTH*ELITE;i<DEPTH;i++){
             int mate1 = rouletteSelect(weight_sum);
             int mate2 = rouletteSelect(weight_sum);
-            //if(mate1<0 || mate2<0) return;
-            //if(mate1 == mate2) continue;
             assert(mate1 >= 0 && mate2 >= 0);
             buffer.solutions[i] = (*(solutions[mate1])).mate(*(solutions[mate2]));
         }
     }
+    /*
+        Each chromosome has it's fitness, and the stronger it is the more likely the chromosome will be
+        chosen to mate. @param - Weight_sum = sum of all the fitnesses in the gene.
+        Randomly select a number between 0 and the weight_sum, then keep subtracting the chromosomes's
+        fitness until the number is <= 0.
+    */
     int rouletteSelect(double weight_sum){
         double value = ((double) rand() / (RAND_MAX)) * weight_sum;
         for(int i=0; i<DEPTH; ++i){
@@ -201,33 +222,11 @@ public:
         }
         return DEPTH-1;
     }
+    /*
+        Mutate a gene iterate through all the chromosomes and switches the places of 2 random queens.
+    */
     void mutate(){
         for(int i=0;i<DEPTH;++i){
-                /*
-            int problem = 0;
-            for(unsigned int i=0 ; i < QUEENS-1 ; ++i){
-                unsigned int j = i+1;
-                int first = i;
-                problem = j;
-                int diff = 1;
-                bool prob_found = false;
-                while(j < places.size()){
-                    int next = places[j];
-                    if(abs(places[first]-next) == diff){
-                        problem = j;
-                        prob_found = true;
-                        break;
-                    }
-                    ++diff;
-                    ++j;
-                }
-                if(prob_found) break;
-            }
-            int switch_index = rand() % QUEENS;
-            int temp = places[problem];
-            places[problem] = places[switch_index];
-            places[switch_index] = temp;
-            */
             if(solutions[i]->get_fitness() == 0) return;
             int first = rand() % QUEENS;
             int second = rand() % QUEENS;
@@ -237,86 +236,31 @@ public:
             (*solutions[i]).updateFitness();
         }
     }
-    void merge(Board a, Board b){
-        int ia, ib, ic;
-        for(ia=0,ib=0,ic=0;ia<DEPTH&&ib<DEPTH&&ic<DEPTH;){
-            int a_fit = a.solutions[ia]->get_fitness();
-            int b_fit = b.solutions[ib]->get_fitness();
-            if(a_fit<=b_fit){
-                solutions[ic++] = a.solutions[ia++];
-            }
-            else{
-                solutions[ic++] = a.solutions[ib++];
-            }
-        }
-        if(ic<DEPTH&&ia<DEPTH){
-            while(ic<DEPTH&&ia<DEPTH)
-                solutions[ic++] = a.solutions[ia++];
-        }
-        else if(ic<DEPTH&&ib<DEPTH)
-            while(ic<DEPTH&&ib<DEPTH)
-                solutions[ic++] = a.solutions[ib++];
-    }
 };
-/*
-// Returns a uniformly distributed double value between 0.0 and 1.0
-double randUniformPositive() {
-	// easiest implementation
-	return ((double) rand() / (RAND_MAX));
-}
-
-int rouletteSelect(Board& board, double weight_sum){
-    int to_mate = MATE_PCT*DEPTH;
-    to_mate = (to_mate%2) ? to_mate-1 : to_mate;
-    double value = randUniformPositive() * weight_sum;
-    for(int i=0; i<to_mate; ++i){
-        double fitness = (double)((board[i])->get_fitness());
-        if(!fitness) return -1;
-        value -= 1/fitness;
-        if(value <= 0)
-            return i;
-    }
-    return to_mate-1;
-
-    for(int i=0; i<to_mate-1 && i<DEPTH-1; i+=2){
-        (*((*board)[i])).mate(*((*board)[i+1]));
-    }
-}
-
-void mate_board(Board& board){
-    int to_mate = MATE_PCT*DEPTH;
-    to_mate = (to_mate%2) ? to_mate-1 : to_mate;
-    double weight_sum = 0;
-    for(int i=0; i<to_mate; ++i){
-        double fitness = (double)((board[i])->get_fitness());
-        if(!fitness) return;
-        weight_sum += 1/fitness;
-    }
-    for(int i=0;i<to_mate/2;i++){
-        int mate1 = rouletteSelect(board, weight_sum);
-        int mate2 = rouletteSelect(board, weight_sum);
-        if(mate1<0 || mate2<0) return;
-        if(mate1 == mate2) continue;
-        (*(board[mate1])).mate(*(board[mate2]));
-    }
-}
-*/
 int main()
 {
     srand(time(NULL));
+
+/*
+    Initializing board1 to be the main board and the buffer to hold the next gene.
+*/
     Board board1;
     Board buffer;
-    //board1.sort();
-    int it = 0;
+
+    int it = 0;     // it for iterations counter.
+/*
+    The genes mate and mutate until the best chromosome has fitness of 0 = solved for N-Queens.
+*/
     while(board1[board1.best()]->get_fitness() && it<ITERATIONS){
         board1.mate(buffer);
-        //buffer.sort();
         board1 = buffer;
+
+/*
+    The gene mutate with probability of 0.25.
+*/
         if(((double) rand() / (RAND_MAX))<0.25){
             board1.mutate();
-            //board1.sort();
         }
-        //board1.sort();
         ++it;
         cout << "best yet: " << *(board1[board1.best()]);
     }
