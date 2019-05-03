@@ -5,11 +5,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <stdexcept>
 
-#define QUEENS 20       // Number of Queens on the board.
 #define DEPTH 2048      // Amount of chromosomes in a single gene.
 #define ITERATIONS 700  // Number of tries to find a solution.
 #define ELITE 0.1     // The elite precentage of the chromosomes to be moved to the next generation.
+
+int QC = 20;    // Queens Count
 
 using namespace std;
 template <class T>
@@ -30,12 +32,12 @@ public:
         The constructor randomly selects places the queens and then calculates the solutions's fitness.
     */
     Solution(){
-        int queens[QUEENS] = {0};
-        for(int i=0;i<QUEENS;++i){
+        int* queens = new int[QC];
+        for(int i=0;i<QC;++i){
             queens[i] = i;
         }
-        int len = QUEENS;
-        for(int i=0; i<QUEENS; ++i){
+        int len = QC;
+        for(int i=0; i<QC; ++i){
             int index = rand() % len;
             int add = queens[index];
             places.push_back(add);
@@ -43,6 +45,7 @@ public:
             len--;
         }
         fitness = calc_fitness();
+        delete[] queens;
     }
     int calc_fitness(){
         int count = 0;
@@ -80,14 +83,14 @@ public:
     */
     Solution* mate(Solution s){
         Solution* res = new Solution;
-        int rand_hist[QUEENS] = {0};
-        int len_rand = QUEENS;
+        int* rand_hist = new int[QC];
+        int len_rand = QC;
         for(int i=0;i<len_rand;++i){
             rand_hist[i] = i;
         }
-        int hist[QUEENS] = {0};
-        int hist_index[QUEENS] = {0};
-        int to_keep = rand()%(QUEENS-1);
+        int* hist = new int[QC];
+        int* hist_index = new int[QC];
+        int to_keep = rand()%(QC-1);
         for(int i=0; i<to_keep && len_rand>=1; ++i){
             int i_hist = rand() % len_rand;
             int index = rand_hist[i_hist];
@@ -97,9 +100,9 @@ public:
             hist_index[index]++;
         }
         int last = 0;
-        for(int i=0;i<QUEENS;i++){
+        for(int i=0;i<QC;i++){
             if(hist_index[i]==0){
-                for(int j=last;j<QUEENS;j++){
+                for(int j=last;j<QC;j++){
                     if(hist[s.places[j]]==0){
                         res->places[i] = s.places[j];
                         last = j+1;
@@ -112,6 +115,9 @@ public:
             }
         }
         res->updateFitness();
+        delete[] rand_hist;
+        delete[] hist;
+        delete[] hist_index;
         return res;
     }
 };
@@ -228,8 +234,8 @@ public:
     void mutate(){
         for(int i=0;i<DEPTH;++i){
             if(solutions[i]->get_fitness() == 0) return;
-            int first = rand() % QUEENS;
-            int second = rand() % QUEENS;
+            int first = rand() % QC;
+            int second = rand() % QC;
             int temp = (*solutions[i])[first];
             (*solutions[i])[first] = (*solutions[i])[second];
             (*solutions[i])[second] = temp;
@@ -237,8 +243,27 @@ public:
         }
     }
 };
-int main()
+int main(int argc, char** argv)
 {
+    if(argc <= 1 || argc >= 3){
+        cout << "Run \"Queens <board_size>\"" << endl;
+        return 0;
+    }
+    std::string arg = argv[1];
+    try {
+    std::size_t pos;
+    QC = std::stoi(arg, &pos);
+    if (pos < arg.size()) {
+        std::cerr << "Trailing characters after number: " << arg << '\n';
+        return 1;
+    }
+    } catch (std::invalid_argument const &ex) {
+        std::cerr << "Invalid number: " << arg << '\n';
+        return 1;
+    } catch (std::out_of_range const &ex) {
+        std::cerr << "Number out of range: " << arg << '\n';
+        return 1;
+    }
     srand(time(NULL));
 
 /*
@@ -247,14 +272,13 @@ int main()
     Board board1;
     Board buffer;
 
-    int it = 0;     // it for iterations counter.
+    int it = 0;     // iterations counter.
 /*
     The genes mate and mutate until the best chromosome has fitness of 0 = solved for N-Queens.
 */
     while(board1[board1.best()]->get_fitness() && it<ITERATIONS){
         board1.mate(buffer);
         board1 = buffer;
-
 /*
     The gene mutate with probability of 0.25.
 */
