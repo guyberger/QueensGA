@@ -19,9 +19,12 @@ The rest of the generation is being mated and produce the next generation.
 The mating process includes a selection algorithm which uses a Roullette Selection algorithm to choose with high probability stronger genes as parents to continue to the next generation. -A gene can be a parent of multiple children.
 Every few generations I perform a mutation, thus assuring randomness and effectiveness.
 
-### Can be described as:
+## Can be described as:
 1. Create generation.
 2. Choose Elite.
 3. Roullette selection mating.
 4. Mutate (if needed).
 5. Go to 2 with new generation. Stop when goal is reached.
+
+## How to run:
+Run Queens.exe 
