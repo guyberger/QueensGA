@@ -13,10 +13,10 @@
 * Mutation - "nature like" transforms an entire generation by a small change.
 
 ## Solution
-Following Genetic Algorithm principles I rank genes according to their closeness for a solution which is based on the amount of threatening queens in the gene.
+Following Genetic Algorithm principles I rank genes according to their closeness to a solution which is based on the amount of threatening queens in the gene.
 Next I choose the Elite to automatically continue to be in the next generation.
 The rest of the generation is being mated and produce the next generation.
-The mating process includes a selection algorithm based on the rank of the parents. The selection algorithm uses a Roullette Selection algorithm to choose with high probability stronger genes to continue to the next generation.
+The mating process includes a selection algorithm which uses a Roullette Selection algorithm to choose with high probability stronger genes as parents to continue to the next generation. -A gene can be a parent of multiple children.
 Every few generations I perform a mutation, thus assuring randomness and effectiveness.
 
 ### Can be described as:
