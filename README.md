@@ -26,5 +26,16 @@ Every few generations I perform a mutation, thus assuring randomness and effecti
 4. Mutate (if needed).
 5. Go to 2 with new generation. Stop when goal is reached.
 
-## How to run:
-Run Queens.exe 
+## Note
+Not all possible N values have a solution!
+
+## Build and Run:
+This is a CLI program.
+Build: 
+> g++ main.cpp
+
+Run:
+> ./Queens.exe <number_of_queens>
+
+To find fast results - 8, 20, 50 queens recommended.
+
