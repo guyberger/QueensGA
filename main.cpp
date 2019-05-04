@@ -7,9 +7,9 @@
 #include <cassert>
 #include <stdexcept>
 
-#define DEPTH 2048      // Amount of chromosomes in a single gene.
+#define DEPTH 2048      // Amount of genes in a single generation.
 #define ITERATIONS 700  // Number of tries to find a solution.
-#define ELITE 0.1     // The elite precentage of the chromosomes to be moved to the next generation.
+#define ELITE 0.1     // The elite precentage of the genes to be moved to the next generation.
 
 int QC = 20;    // Queens Count
 
@@ -21,7 +21,7 @@ void GA_swap(T& a, T& b){
     b = c;
 }
 /*
-    A solution holds a vector of places for the N-Queens. It is a chromosome in a gene, each with
+    A solution holds a vector of places for the N-Queens. It is a gene in a generation, each with
     it's appropriate fitness.
 */
 class Solution{
@@ -76,7 +76,7 @@ public:
         return places.size();
     }
     /*
-        Mates 2 chromosomes and return a child. The mating algorithm chooses a number of locaindexes from the
+        Mates 2 genes and return a child. The mating algorithm chooses a number of locaindexes from the
         first parent, copies them and the appropriate queens to the same indexes of the child and then
         takes the rest of the queens from the other parent and put them in the free indexes of the child
         while keeping their relative order.
@@ -147,7 +147,7 @@ public:
         return *this;
     }
     /*
-        The sort function sorts only the Elite chromosomes.
+        The sort function sorts only the Elite genes.
     */
     void sort(){
         int min, i_min;
@@ -167,7 +167,7 @@ public:
         }
     }
     /*
-        Finds the strongest chromosome in the gene (with minimum fitness).
+        Finds the strongest gene in the gene (with minimum fitness).
     */
     int best(){
         int min = (*(solutions[0])).get_fitness(), i_min = 0;
@@ -192,9 +192,9 @@ public:
     }
     /*
         Mating has 2 steps:
-            1. Go through the entire gene and select 2 chromosomes to mate in each iteration, using
+            1. Go through the entire generation and select 2 genes to mate in each iteration, using
             Roulette Selection.
-            2. Mate the selected 2 chromosomes and add the child to the buffer.
+            2. Mate the selected 2 genes and add the child to the buffer.
     */
     void mate(Board& buffer){
         elite(buffer);
@@ -212,9 +212,9 @@ public:
         }
     }
     /*
-        Each chromosome has it's fitness, and the stronger it is the more likely the chromosome will be
-        chosen to mate. @param - Weight_sum = sum of all the fitnesses in the gene.
-        Randomly select a number between 0 and the weight_sum, then keep subtracting the chromosomes's
+        Each gene has it's fitness, and the stronger it is the more likely the gene will be
+        chosen to mate. @param - Weight_sum = sum of all the fitnesses in the generation.
+        Randomly select a number between 0 and the weight_sum, then keep subtracting the gene's
         fitness until the number is <= 0.
     */
     int rouletteSelect(double weight_sum){
@@ -229,7 +229,7 @@ public:
         return DEPTH-1;
     }
     /*
-        Mutate a gene iterate through all the chromosomes and switches the places of 2 random queens.
+        Mutate a gene iterate through all the genes and switches the places of 2 random queens.
     */
     void mutate(){
         for(int i=0;i<DEPTH;++i){
@@ -267,14 +267,14 @@ int main(int argc, char** argv)
     srand(time(NULL));
 
 /*
-    Initializing board1 to be the main board and the buffer to hold the next gene.
+    Initializing board1 to be the main board and the buffer to hold the next generation.
 */
     Board board1;
     Board buffer;
 
     int it = 0;     // iterations counter.
 /*
-    The genes mate and mutate until the best chromosome has fitness of 0 = solved for N-Queens.
+    The genes mate and mutate until the best gene has fitness of 0 = solved for N-Queens.
 */
     while(board1[board1.best()]->get_fitness() && it<ITERATIONS){
         board1.mate(buffer);
